@@ -1,99 +1,94 @@
 import numpy as np
 
 
-def constant_step(A, b, x, e, imax):
+def method_constant_step(A, b, x, e, imax, alpha):
     """
     Функция для постоянного шага альфа
-    a - альфа - задается с клавиатуры, число типа float
-    Альфа - шаг, на который мы изменяем значение невязки для приближения текущих х к истинным значениям
-    i - номер итерации, число типа int
-    A, b, x, e, imax - параметры, вводимые программно для примера: матрица коэффициентов,
-    столбец свободных членов, столбец предполагаемых решений, допустимая погрешность,
-    максимальное количество итераций
-    r - невязка, столбец (массив) со значениями типа float
-    d - квадрат значения невязки (?), число типа float
-    d0 - начальное значение d, число float
-    Высчитывается значение невязки,значение дельты. В цикле на каждом шаге заново высчитывается более
-    приближенное значение столбца х с помощью альфа и невязки.
-    Пересчитываем значение невязки r с учетом измененных решений и дельта с измененной невязкой.
-    Выводим на экран полученные значения х, невязку и кол-во произведенных итераций
+    a - альфа - число типа float, шаг, на который мы изменяем значение невязки
+    для приближения текущих х к истинным значениям,
+    A - матрица коэффициентов,
+    b - столбец свободных членов,
+    x - столбец предполагаемых решений,
+    e - допустимая погрешность,
+    imax - максимальное количество итераций
     """
-    print("Please enter alpha")
-    a = float(input())
-    i = 0
-    r = b - A.dot(x)
-    d = np.transpose(r).dot(r)
-    d0 = d
-    while (i < imax) and (d > e ** 2 * d0):
-        x = x + a * r
-        r = b - A.dot(x)
-        d = np.transpose(r).dot(r)
+    i = 0  # счетчик итераций
+    residual = b - A.dot(x)  # residual - невязка, столбец (массив) со значениями типа float
+    d = np.transpose(residual).dot(residual)  # d - квадрат значения невязки, число типа float
+    d0 = d  # d0 - начальное значение d, число float
+    while (i < imax) and (d > e ** 2 * d0):  # цикл, ограниченный максимальным кол-вом итераций и погрешностью
+        x = x + alpha * residual  # заново высчитывается более приближенное значение столбца х с помощью альфа и невязки
+        residual = b - A.dot(x)  # пересчитывается значение невязки с учетом измененных решений
+        d = np.transpose(residual).dot(residual)  # дельта с измененной невязкой
         i += 1
-    print(x, r, i)
+    return x, d, i  # возвращаем приближенные решения, значение ошибки, кол-во итераций
 
 
-def variable_step(A, b, x, e, imax):
+def method_variable_step(A, b, x, e, imax):
     """
     Функция для переменного шага альфа
-    a - альфа - число типа float, изменяется в ходе программы и зависит от невязки
-    Остальные параметры те же, что и в функции выше
-    Алгоритм из параграфа steepest decent
-    Выводим на экран полученные значения х, невязку и кол-во произведенных итераций
+    a - альфа - число типа float, шаг, на который мы изменяем значение невязки
+    для приближения текущих х к истинным значениям,
+    A - матрица коэффициентов,
+    b - столбец свободных членов,
+    x - столбец предполагаемых решений,
+    e - допустимая погрешность,
+    imax - максимальное количество итераций
     """
-    i = 0
-    r = b - A.dot(x)
-    d = np.transpose(r).dot(r)
-    d0 = d
-    while (i < imax) and (d > e ** 2 * d0):
-        q = A.dot(r)
-        a = d / (np.transpose(r).dot(q))
-        x = x + a * r
-        r = b - A.dot(x)
-        d = np.transpose(r).dot(r)
+    i = 0  # счетчик итераций
+    residual = b - A.dot(x)  # residual - невязка, столбец (массив) со значениями типа float
+    d = np.transpose(residual).dot(residual)  # d - квадрат значения невязки, число типа float
+    d0 = d  # d0 - начальное значение d, число float
+    while (i < imax) and (d > e ** 2 * d0):  # цикл, ограниченный максимальным кол-вом итераций и погрешностью
+        q = A.dot(residual)  # умножается матрица коэффициентов на невязку
+        alpha = d / (np.transpose(residual).dot(q))  # высчитывается альфа
+        x = x + alpha * residual  # заново высчитывается более приближенное значение столбца х с помощью альфа и невязки
+        residual = b - A.dot(x)  # пересчитывается значение невязки с учетом измененных решений
+        d = np.transpose(residual).dot(residual)  # дельта с измененной невязкой
         i += 1
-    print(x, r, i)
+    return x, d, i  # Возвращаем полученные значения х, невязку и кол-во произведенных итераций
 
 
 def main():
+    print("Matrix 2x2")
     matrix_a = np.array([[2, 3], [4, 9]], dtype=float)
     b = np.transpose(np.array([6, 15], dtype=float))
     x = np.transpose(np.array([1, 1], dtype=float))
-    e = 0.01
+    e = 0.1
     imax = 100
-    print("Enter '2' for 2x2 matrix, '3' for 3x3 and '4' for 4x4")
-    matrix = int(input())
-    if matrix == 2:
-        matrix_a = np.array([[2, 3], [4, 9]], dtype=float)
-        b = np.transpose(np.array([6, 15], dtype=float))
-        x = np.transpose(np.array([1, 1], dtype=float))
-        e = 0.01
-        imax = 100
-        # x = (1.5, 1)
-    elif matrix == 3:
-        matrix_a = np.array([[1, 2, 3], [3, 5, 7], [1, 3, 4]], dtype=float)
-        b = np.transpose(np.array([3, 0, 1], dtype=float))
-        x = np.transpose(np.array([-3, -12, 10], dtype=float))
-        e = 0.1
-        imax = 10000
-        # x = (-4, -13, 11)
-    elif matrix == 4:
-        matrix_a = np.array([[1, -1, 3, 1], [4, -1, 5, 4], [2, -2, 4, 1], [1, -4, 5, -1]], dtype=float)
-        b = np.transpose(np.array([5, 4, 6, 3], dtype=float))
-        x = np.transpose(np.array([7, 15, 11, -15], dtype=float))
-        e = 0.1
-        imax = 100
-        # x = (9, 18, 10, -16)
-    else:
-        print("You entered an invalid value")
-    if matrix == 2 or matrix == 3 or matrix == 4:
-        print("Enter 1 for constant step alpha and 0 for variable")
-        choice = int(input())
-        if choice == 1:
-            constant_step(matrix_a, b, x, e, imax)
-        elif choice == 0:
-            variable_step(matrix_a, b, x, e, imax)
-        else:
-            print("You entered an invalid value")
+    alpha = 0.9
+    # x = (1.5, 1)
+    print("Method_constant_step")
+    print(method_constant_step(matrix_a, b, x, e, imax, alpha))
+    print("Method_variable_step")
+    print(method_variable_step(matrix_a, b, x, e, imax))
+
+    print("Matrix 3x3")
+    matrix_a = np.array([[1, 2, 3], [3, 5, 7], [1, 3, 4]], dtype=float)
+    b = np.transpose(np.array([3, 0, 1], dtype=float))
+    x = np.transpose(np.array([-3, -12, 10], dtype=float))
+    e = 0.1
+    imax = 10000
+    alpha = 0.1
+    # x = (-4, -13, 11)
+    print("Method_constant_step")
+    print(method_constant_step(matrix_a, b, x, e, imax, alpha))
+    print("Method_variable_step")
+    print(method_variable_step(matrix_a, b, x, e, imax))
+
+    print("Matrix 4x4")
+    matrix_a = np.array([[1, -1, 3, 1], [4, -1, 5, 4], [2, -2, 4, 1], [1, -4, 5, -1]], dtype=float)
+    b = np.transpose(np.array([5, 4, 6, 3], dtype=float))
+    x = np.transpose(np.array([7, 15, 11, -15], dtype=float))
+    e = 0.1
+    imax = 100
+    alpha = 0.09
+    # x = (9, 18, 10, -16)
+    print("Method_constant_step")
+    print(method_constant_step(matrix_a, b, x, e, imax, alpha))
+    print("Method_variable_step")
+    print(method_variable_step(matrix_a, b, x, e, imax))
 
 
-main()
+if __name__ == "__main__":
+    main()
