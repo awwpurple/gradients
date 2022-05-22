@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import time
+from numpy import linalg as ln
 
 
 def method_constant_step(A, b, x, e, imax, alpha):
@@ -238,46 +239,120 @@ def conjugate_gradients(A, b, x, e, imax):
         d = residual + betta * d
         i += 1
         x_array = np.append(x_array, np.array([x]), axis=0)
+    return x, delta_new, i, x_array
+
+
+def method_polak_ribeire(A, b, x, imax, e_cg, sigma0, jmax, e_s):
+    i = 0
+    k = 0
+    x_array = np.empty((0, 2), float)
+    residual = -1 * (A.dot(x) - b)  # вектор
+    m = A  # матрица Гессе
+    s = ln.matrix_power(m, -1).dot(residual)  # вектор
+    d = s  # вектор
+    delta_new = np.transpose(residual).dot(d)  # число
+    n = 50
+    delta0 = delta_new  # число
+    while i < imax and delta_new > e_cg ** 2 * delta0:
+        j = 0
+        delta_d = np.transpose(d).dot(d)  # число
+        alpha = - sigma0
+        eta_prev = np.transpose(A.dot(x + sigma0 * d) - b).dot(d)  # число
+        while (j < jmax) and (alpha ** 2 * delta_d) > e_s ** 2:
+            eta = np.transpose(A.dot(x) - b).dot(d)  # число
+            alpha = alpha * (eta / (eta_prev - eta))  # число
+            x = x + alpha * d
+            x_array = np.append(x_array, np.array([x]), axis=0)
+            eta_prev = eta
+            j = j + 1
+            if (j >= jmax) and (alpha ** 2 * delta_d) >= e_s ** 2:
+                break
+
+        residual = -1 * (A.dot(x) - b)
+        delta_old = delta_new
+        delta_mid = np.transpose(residual).dot(s)
+        m = A
+        s = ln.matrix_power(m, -1).dot(residual)
+        delta_new = np.transpose(residual).dot(s)
+        betta = (delta_new - delta_mid) / delta_old
+        k = k + 1
+        if k == n or betta <= 0:
+            d = s
+            k = 0
+        else:
+            d = s + betta * d
+        i = i + 1
     return x, np.sqrt(delta_new), i, x_array
 
 
-def visualisation():
+def conjugrate_gradients_example():
     matrix_a = np.array([[3, 2], [2, 6]], dtype=float)
     b = np.transpose(np.array([2, -8], dtype=float))
-    x = np.transpose(np.array([-2, 2], dtype=float))
+    x = np.transpose(np.array([5, 5.8], dtype=float))
     imax = 100
-    e = 0.01
+    e = 0.001
     c = 0
     # x =[2, -2]
-    x1 = np.arange(-6, 6.5, 0.5)
-    x2 = np.arange(-6, 6.5, 0.5)
-    # value = np.zeros(len(x1))
-    # i = 0
-    # while i < len(x1):
-    #    x = np.transpose(np.array([x1[i], x2[i]], dtype=float))
-    #    value[i] = 0.5 * np.transpose(x).dot(matrix_a).dot(x) - np.transpose(b).dot(x) - c
-    #    i += 1
-    x1grid, x2grid = np.meshgrid(x1, x2)
     fig, ax = plt.subplots()
-    z = 0.5 * matrix_a[0, 0] * x1grid ** 2 + 0.5 * (matrix_a[1, 0] + matrix_a[0, 1] * x1grid * x2grid) + 0.5 * matrix_a[
-        1, 1] * x2grid ** 2 - b[0] * x1grid - b[1] * x2grid - c
-    lev = np.arange(1, 50, 2)
-    ax.contour(x1, x2, z, levels=lev, colors='b')
-    ax.grid()
-    ax.spines['left'].set_position('center')
-    ax.spines['bottom'].set_position('center')
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
 
     print("Method of conjugate gradients")
     start_time_gradients = time.time()
     approximated_x_gradients, d_gradients, i_gradients, x_array_gradients = conjugate_gradients(matrix_a, b, x, e, imax)
     print("--- running time %s seconds ---" % (time.time() - start_time_gradients))
-    print("Approximate x values: ", approximated_x_gradients, ", norm value: ", d_gradients, ", number of iterations: ", i_gradients)
+    print("Approximate x values: ", approximated_x_gradients, ", norm value: ", d_gradients, ", number of iterations: ",
+          i_gradients)
     print("All approximations:", x_array_gradients)
     x_graph_gradients = np.array([x[0]], dtype=float)
     y_graph_gradients = np.array([x[1]], dtype=float)
     for coordinates in x_array_gradients:
+        x_graph_gradients = np.append(x_graph_gradients, coordinates[0])
+        y_graph_gradients = np.append(y_graph_gradients, coordinates[1])
+    ax.plot(x_graph_gradients, y_graph_gradients, 'o-r', alpha=0.5)
+    x1 = np.arange(-6, 6.5, 0.5)
+    x2 = np.arange(-6, 6.5, 0.5)
+    i, j = 0, 0
+    z = np.zeros((len(x1), len(x1)))
+    for x1_curr in x1:
+        for x2_curr in x2:
+            x0 = np.array([x1_curr, x2_curr])
+            z[i, j] = 0.5 * np.transpose(x0).dot(matrix_a).dot(x0) - np.transpose(b).dot(x0) + c
+            i += 1
+        j += 1
+        i = 0
+
+    lev = np.arange(1, 50, 5)
+    ax.contour(x1, x2, z, levels=lev, colors='gray')
+    ax.grid()
+    ax.spines['left'].set_position('center')
+    ax.spines['bottom'].set_position('center')
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    plt.show()
+    plt.show()
+
+
+def visualisation_pr_sd():
+    matrix_a = np.array([[3, 2], [2, 6]], dtype=float)
+    b = np.transpose(np.array([2, -8], dtype=float))
+    x = np.transpose(np.array([-4, 2], dtype=float))
+    imax = 100
+    e = 0.01
+    sigma0 = 0.1
+    jmax = 100
+    c = 0
+    # x =[2, -2]
+    fig, ax = plt.subplots()
+
+    print("Polak Ribier method")
+    start_time_gradients = time.time()
+    approximated_x_pr, d_pr, i_pr, x_array_pr = method_polak_ribeire(matrix_a, b, x, imax, e, sigma0, jmax, e)
+    print("--- running time %s seconds ---" % (time.time() - start_time_gradients))
+    print("Approximate x values: ", approximated_x_pr, ", norm value: ", d_pr, ", number of iterations: ",
+          i_pr)
+    print("All approximations:", x_array_pr)
+    x_graph_gradients = np.array([x[0]], dtype=float)
+    y_graph_gradients = np.array([x[1]], dtype=float)
+    for coordinates in x_array_pr:
         x_graph_gradients = np.append(x_graph_gradients, coordinates[0])
         y_graph_gradients = np.append(y_graph_gradients, coordinates[1])
     plt.plot(x_graph_gradients, y_graph_gradients, 'o-r', alpha=0.5)
@@ -286,21 +361,43 @@ def visualisation():
     start_time_steepest = time.time()
     approximated_x_steepest, d_steepest, i_steepest, x_array_steepest = method_variable_step(matrix_a, b, x, e, imax)
     print("--- running time %s seconds ---" % (time.time() - start_time_steepest))
-    print("Approximate x values: ", approximated_x_steepest, ", norm value: ", d_steepest, ", number of iterations: ", i_steepest)
+    print("Approximate x values: ", approximated_x_steepest, ", norm value: ", d_steepest, ", number of iterations: ",
+          i_steepest)
     print("All approximations:", x_array_steepest)
     x_graph_steepest = np.array([x[0]], dtype=float)
     y_graph_steepest = np.array([x[1]], dtype=float)
     for coordinates in x_array_steepest:
         x_graph_steepest = np.append(x_graph_steepest, coordinates[0])
         y_graph_steepest = np.append(y_graph_steepest, coordinates[1])
-    plt.plot(x_graph_steepest, y_graph_steepest, 'o-b', alpha=0.5)
+    plt.plot(x_graph_steepest, y_graph_steepest, 'o-.b', alpha=0.5)
+
+    x1 = np.arange(-6, 6.5, 0.5)
+    x2 = np.arange(-6, 6.5, 0.5)
+    i, j = 0, 0
+    z = np.zeros((len(x1), len(x1)))
+    for x1_curr in x1:
+        for x2_curr in x2:
+            x0 = np.array([x1_curr, x2_curr])
+            z[i, j] = 0.5 * np.transpose(x0).dot(matrix_a).dot(x0) - np.transpose(b).dot(x0) + c
+            i += 1
+        j += 1
+        i = 0
+
+    lev = np.arange(1, 50, 5)
+    ax.contour(x1, x2, z, levels=lev, colors='gray')
+    ax.grid()
+    ax.spines['left'].set_position('center')
+    ax.spines['bottom'].set_position('center')
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
     plt.show()
 
 
 def main():
-    visualisation()
+    visualisation_pr_sd()
     # steepest_decent_examples()
     # graphics_to_steepest_decent()
+    # conjugrate_gradients_example()
 
 
 if __name__ == "__main__":
