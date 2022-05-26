@@ -170,7 +170,7 @@ def graphics_to_steepest_decent(matrix_a2, b2, x2, e2, imax2, matrix_a3, b3, x3,
     plt.show()
 
     j = 0
-    alphas2 = np.arange(0.7, 0.95, 0.01)
+    alphas2 = np.arange(0.2, 0.4, 0.01)
     d_array2 = np.zeros(len(alphas2))
     for alpha2 in alphas2:
         x, d, i = method_constant_step(matrix_a4, b4, x4, e4, imax4, alpha2)
@@ -251,7 +251,7 @@ def method_polak_ribeire(A, b, x, imax, e_cg, sigma0, jmax, e_s):
     return x, np.sqrt(delta_new), i, x_array
 
 
-def conjugrate_gradients_example(matrix_a, b, x, imax, e, c):
+def conjugate_gradients_example(matrix_a, b, x, imax, e, c):
     fig, ax = plt.subplots()
     print("Method of conjugate gradients")
     start_time_gradients = time.time()
@@ -281,6 +281,7 @@ def conjugrate_gradients_example(matrix_a, b, x, imax, e, c):
     lev = np.arange(1, 50, 5)
     ax.contour(x1, x2, z, levels=lev, colors='gray')
     ax.grid()
+    plt.title("Conjugate Gradients")
     ax.spines['left'].set_position('center')
     ax.spines['bottom'].set_position('center')
     ax.spines['top'].set_visible(False)
@@ -291,7 +292,7 @@ def conjugrate_gradients_example(matrix_a, b, x, imax, e, c):
 def visualisation_pr_sd(matrix_a, b, x, imax, e, sigma0, jmax, c):
     f2 = open('output', 'w')
     fig, ax = plt.subplots()
-    f2.write("Polak Ribier method\n")
+    f2.write("Polak-Ribiere method\n")
     start_time_gradients = time.time()
     approximated_x_pr, d_pr, i_pr, x_array_pr = method_polak_ribeire(matrix_a, b, x, imax, e, sigma0, jmax, e)
     f2.write("--- running time %s seconds ---" % (time.time() - start_time_gradients))
@@ -311,7 +312,7 @@ def visualisation_pr_sd(matrix_a, b, x, imax, e, sigma0, jmax, c):
         for coordinates1 in x_array_pr:
             x_graph_gradients = np.append(x_graph_gradients, coordinates1[0])
             y_graph_gradients = np.append(y_graph_gradients, coordinates1[1])
-        plt.plot(x_graph_gradients, y_graph_gradients, marker='o', linestyle='--', color='black', alpha=0.5)
+        plt.plot(x_graph_gradients, y_graph_gradients, marker='o', linestyle='--', color='black', alpha=0.5, label="Polak-Ribiere method")
     f2.write("Method of steepest decent")
     start_time_steepest = time.time()
     approximated_x_steepest, d_steepest, i_steepest, x_array_steepest = method_variable_step(matrix_a, b, x, e, imax)
@@ -332,7 +333,7 @@ def visualisation_pr_sd(matrix_a, b, x, imax, e, sigma0, jmax, c):
         for coordinates2 in x_array_steepest:
             x_graph_steepest = np.append(x_graph_steepest, coordinates2[0])
             y_graph_steepest = np.append(y_graph_steepest, coordinates2[1])
-        plt.plot(x_graph_steepest, y_graph_steepest, marker='^', color='black', alpha=0.5)
+        plt.plot(x_graph_steepest, y_graph_steepest, marker='^', color='black', alpha=0.5, label='Steepest Decent')
 
     x1 = np.arange(-6, 6.5, 0.5)
     x2 = np.arange(-6, 6.5, 0.5)
@@ -354,6 +355,7 @@ def visualisation_pr_sd(matrix_a, b, x, imax, e, sigma0, jmax, c):
         ax.spines['bottom'].set_position('center')
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
+        ax.legend()
         plt.show()
     f2.close()
 
@@ -391,7 +393,7 @@ def main():
     e_cg = 0.01
     c_cg = 0
     # x =[2, -2]
-    conjugrate_gradients_example(matrix_a_cg, b_cg, x_cg, imax_cg, e_cg, c_cg)
+    conjugate_gradients_example(matrix_a_cg, b_cg, x_cg, imax_cg, e_cg, c_cg)
 
     f = open('input', 'r')
     matrix_a = np.array(f.readline().rstrip().split(), dtype=float)
